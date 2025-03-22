@@ -12,7 +12,7 @@ export default function CreateGraphScreen() {
   const router = useRouter();
   const newId = Crypto.randomUUID();
   const [emojiBoxOpen, setEmojiBoxOpen] = useState(false);
-  const [colorOptions] = useState(Object.entries(Colors.pastels).map(([name, hex]) => ({ name, hex })));
+  const [colorOptions] = useState(Object.entries(Colors.cardColors).map(([name, hex]) => ({ name, hex })));
   const [colorModalOpen, setColorModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [xAxis, setXAxis] = useState("");

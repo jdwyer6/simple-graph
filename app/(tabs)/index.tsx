@@ -12,7 +12,7 @@ import { Graph } from "../../types/Graph"
 export default function ExploreScreen() {
   const router = useRouter();
   const [graphs, setGraphs] = useState<Graph[]>([]);
-  const [colorOptions] = useState(Object.entries(Colors.pastels).map(([name, hex]) => ({ name, hex })));
+  const [colorOptions] = useState(Object.entries(Colors.cardColors).map(([name, hex]) => ({ name, hex })));
 
   // useEffect(() => {
   //   const fetchGraphs = async () => {

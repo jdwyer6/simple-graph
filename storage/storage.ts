@@ -37,5 +37,14 @@ const deleteGraph = async (idToDelete: string) => {
     return [];
   }
 };
+ 
+const saveAllGraphs = async (graphs: Graph[]) => {
+  try {
+    await AsyncStorage.setItem("graphs", JSON.stringify(graphs));
+  } catch (err) {
+    console.error("Failed to save all graphs:", err);
+  }
+};
 
-export { saveGraph, getGraphs, deleteGraph }; // ✅ Named exports
+
+export { saveGraph, getGraphs, deleteGraph, saveAllGraphs };

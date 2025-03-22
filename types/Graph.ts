@@ -5,5 +5,6 @@ export type Graph = {
     xAxis: string;
     yAxis: string;
     colorIdx: number;
+    data?: [number, number][];
   };
   
