@@ -1,8 +1,12 @@
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors } from "../../constants/Colors";
-import { getGraphs } from "../../storage/storage"; 
-import { useState, useEffect } from "react";
+import { getGraphs, deleteGraph } from "../../storage/storage"; 
+import { useState, useEffect, useCallback } from "react";
+import Entypo from '@expo/vector-icons/Entypo';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 
 type Graph = {
   id: string;
@@ -10,84 +14,118 @@ type Graph = {
   emoji: string;
   xAxis: string;
   yAxis: string;
+  colorIdx: number;
 };
 
 export default function ExploreScreen() {
   const router = useRouter();
   const [graphs, setGraphs] = useState<Graph[]>([]);
-  const screenWidth = Dimensions.get("window").width;
-  const numColumns = 2;
-  const gap = 10;
-  const padding = 10 * 2; 
-  const cardWidth = (screenWidth - padding - (gap * (numColumns - 1))) / numColumns;
+  const [colorOptions] = useState(Object.entries(Colors.pastels).map(([name, hex]) => ({ name, hex })));
 
-  useEffect(() => {
-    const fetchGraphs = async () => {
-      const savedGraphs = await getGraphs();
-      setGraphs(savedGraphs);
-    };
+  // useEffect(() => {
+  //   const fetchGraphs = async () => {
+  //     const savedGraphs = await getGraphs();
+  //     setGraphs(savedGraphs);
+  //   };
 
-    fetchGraphs();
-    console.log(graphs);
-  }, []);
+  //   fetchGraphs();
+  //   console.log(graphs);
+  // }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchGraphs = async () => {
+        const savedGraphs = await getGraphs();
+        setGraphs(savedGraphs);
+      };
+  
+      fetchGraphs();
+    }, [])
+  );
+  
+
+  const handleDeleteGraph = (id: string) => {
+    Alert.alert(
+      "Delete Graph?",
+      "Are you sure you want to delete this graph?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const updated = await deleteGraph(id);
+            setGraphs(updated);
+          },
+        },
+      ]
+    );
+  };
+  
 
   return (
-    <View style={styles.container}>
-      <View style={styles.grid}>
-        <TouchableOpacity 
-            style={[styles.card, { width: cardWidth }]} 
-            onPress={() => router.push("./create")}
-          >
-            <Text style={styles.cardText}>Create</Text>
-        </TouchableOpacity>
-        <FlatList
-        data={graphs}
-        keyExtractor={(item) => item.id}
-        numColumns={3}
-        renderItem={({ item }) => (
-          <TouchableOpacity style={[styles.card, { width: cardWidth }]} onPress={() => console.log("Graph Clicked:", item)}>
-            <Text style={[styles.emoji, { fontSize: cardWidth * .5 }]}>{item.emoji}</Text>
-            <Text style={styles.cardText}>{item.title}</Text>
-          </TouchableOpacity>
-        )}
-      />
+    <SafeAreaView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>Simple Graph</Text>
+        <View style={styles.grid}>
+          <FlatList
+            data={graphs}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            columnWrapperStyle={{ justifyContent: 'space-between' }}
+            contentContainerStyle={{ padding: 10 }}
+            renderItem={({ item }) => (
+              <TouchableOpacity style={[styles.card, {backgroundColor: colorOptions[item.colorIdx].hex}]} onPress={() => router.push(`../graph/${item.id}`)}>
+                  <TouchableOpacity onPress={() => handleDeleteGraph(item.id)} style={styles.dots} >
+                    <Entypo name="dots-three-vertical" size={24} color="black" />
+                  </TouchableOpacity>
+                <Text style={styles.emoji}>{item.emoji}</Text>
+                <Text style={styles.cardText}>{item.title}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
-    paddingHorizontal: 10, // Controls left and right padding
-    justifyContent: "center",
+    paddingHorizontal: 10,
+    justifyContent: "flex-start",
     alignItems: "center",
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    justifyContent: "space-between", // Ensures even spacing between items
+    justifyContent: "space-between",
+    padding: 10,
   },
   card: {
-    aspectRatio: 1, // Ensures perfect squares
-    backgroundColor: Colors.primary,
-    borderRadius: 10,
+    width: "48%",
+    aspectRatio: 1,
+    backgroundColor: "#ccc",
+    padding: 10,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 10, // Space between rows
-    elevation: 5, // Android shadow
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2, // iOS shadow
+    display: "flex",
+    borderRadius: 10,
+    marginBottom: 10,
   },
   emoji: {
-    // fontSize: screenWidth * 0.2,
+    fontSize: 80,
   },
   cardText: {
-    color: "#fff",
+    color: Colors.text,
     fontSize: 18,
     fontWeight: "bold",
   },
+  dots: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    opacity: 0.5,
+  }
 });

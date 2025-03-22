@@ -1,20 +1,35 @@
-import { useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import brandStyles from "../../constants/styles";
 import { saveGraph } from "../../storage/storage";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import EmojiSelector, { Categories } from "react-native-emoji-selector";
+import EmojiPicker, { type EmojiType } from 'rn-emoji-keyboard'
 import * as Crypto from "expo-crypto";
+import { Colors } from "../../constants/Colors";
+import ColorSelector from "../../components/ColorSelector";
 
 export default function CreateGraphScreen() {
   const router = useRouter();
   const newId = Crypto.randomUUID();
-
-  // Form state
+  const [emojiBoxOpen, setEmojiBoxOpen] = useState(false);
+  const [colorOptions] = useState(Object.entries(Colors.pastels).map(([name, hex]) => ({ name, hex })));
+  const [colorModalOpen, setColorModalOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [xAxis, setXAxis] = useState("");
   const [yAxis, setYAxis] = useState("");
   const [emoji, setEmoji] = useState("📊");
+  const [colorIdx, setColorIdx] = useState(0);
+
+  useEffect(() => {
+    const randomColorIdx = Math.floor(Math.random() * colorOptions.length);
+    setColorIdx(randomColorIdx);
+  }, []);
+      
+  
+  const handleSelectEmoji = (emoji: EmojiType) => {
+    console.log("Selected emoji:", emoji);
+    setEmoji(emoji.emoji);
+  }
 
   // Function to save graph data
   const handleSaveGraph = async () => {
@@ -29,6 +44,7 @@ export default function CreateGraphScreen() {
       xAxis,
       yAxis,
       emoji,
+      colorIdx,
       createdAt: new Date().toISOString(),
     };
 
@@ -45,35 +61,58 @@ export default function CreateGraphScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Create a New Graph</Text>
+        <Text style={styles.header}>Create a New Graph</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="Graph Title"
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="X-Axis Label"
-        value={xAxis}
-        onChangeText={setXAxis}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Y-Axis Label"
-        value={yAxis}
-        onChangeText={setYAxis}
-      />
+        <Text style={styles.label}>Graph Title</Text>
+        <TextInput
+            style={styles.input}
+            placeholder="Graph Title"
+            value={title}
+            onChangeText={setTitle}
+        />
 
-      <Text style={styles.emojiLabel}>Select an Emoji:</Text>
-      {/* <EmojiSelector
-        category={Categories.symbols}
-        onEmojiSelected={emoji => console.log(emoji)}
-        />; */}
+        <Text style={styles.label}>X (Horizontal) Axis Label</Text>
+        <TextInput
+            style={styles.input}
+            placeholder="X-Axis Label"
+            value={xAxis}
+            onChangeText={setXAxis}
+        />
 
-      <Button title="Create Graph" onPress={handleSaveGraph} color="#4CAF50" />
-      <Button title="Cancel" onPress={() => router.back()} color="#FF5252" />
+        <Text style={styles.label}>Y (Vertical) Axis Label</Text>
+        <TextInput
+            style={styles.input}
+            placeholder="Y-Axis Label"
+            value={yAxis}
+            onChangeText={setYAxis}
+        />
+
+        <Text style={styles.label}>Emoji</Text>
+        <TouchableOpacity onPress={() => setEmojiBoxOpen(true)} style={brandStyles.buttonTertiary}>
+          <View style={brandStyles.flexRowCenter}>
+            <Text>{emoji}</Text> 
+            <Text>Select an Emoji</Text> 
+          </View>
+        </TouchableOpacity>
+
+        <Text style={styles.label}>Color</Text>
+        <TouchableOpacity onPress={() => setColorModalOpen(true)} style={brandStyles.buttonTertiary}>
+          <View style={brandStyles.flexRowCenter}>
+            <View style={[styles.colorSelection, {backgroundColor: colorOptions[colorIdx].hex}]}></View>
+            <Text>Select an Color</Text> 
+          </View>
+        </TouchableOpacity>
+
+        <EmojiPicker onEmojiSelected={handleSelectEmoji} enableSearchBar open={emojiBoxOpen} onClose={() => setEmojiBoxOpen(false)} />
+        <ColorSelector visible={colorModalOpen} onClose={() => setColorModalOpen(false)} colorOptions={colorOptions} currentIdx={colorIdx} onSelect={(idx) => setColorIdx(idx)} />
+
+        <TouchableOpacity style={brandStyles.buttonPrimary} onPress={handleSaveGraph}>
+            <Text style={brandStyles.primaryButtonText}>Create Graph</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={brandStyles.buttonSecondary} onPress={() => router.back()}>
+            <Text style={brandStyles.secondaryButtonText}>Cancel</Text>
+        </TouchableOpacity>
     </View>
   );
 }
@@ -82,29 +121,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: Colors.background.primary,
     justifyContent: "center",
   },
   header: {
     fontSize: 24,
     fontWeight: "bold",
-    textAlign: "center",
+    textAlign: "left",
     marginBottom: 20,
+    color: Colors.text,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: Colors.border.light,
     padding: 10,
     marginBottom: 10,
-    borderRadius: 5,
+    borderRadius: 100,
+    color: Colors.text,
+    backgroundColor: Colors.background.input,
+    fontSize: 12,
   },
-  emojiLabel: {
-    fontSize: 18,
-    textAlign: "center",
-    marginTop: 10,
+  label: {
+    marginBottom: 5,
+    fontWeight: "bold",
   },
-  emojiPicker: {
-    alignSelf: "center",
-    marginBottom: 20,
+  additionalConfigContainer: {
+    flexDirection: 'column',
+    gap: 10,
+    alignItems: 'center',
+    marginBottom: 10
   },
+  colorSelection: {
+    width: 20,
+    height: 20,
+    borderRadius: 100,
+  }
 });

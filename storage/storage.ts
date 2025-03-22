@@ -21,4 +21,30 @@ const getGraphs = async () => {
   }
 };
 
-export { saveGraph, getGraphs }; // ✅ Named exports
+const deleteGraph = async (idToDelete: string) => {
+
+  type Graph = {
+    id: string;
+    title: string;
+    emoji: string;
+    xAxis: string;
+    yAxis: string;
+    colorIdx: number;
+  };
+  
+
+  try {
+    const data = await AsyncStorage.getItem("graphs");
+    const graphs = data ? JSON.parse(data) : [];
+
+    const updatedGraphs = graphs.filter((g: Graph) => g.id !== idToDelete);
+    await AsyncStorage.setItem("graphs", JSON.stringify(updatedGraphs));
+
+    return updatedGraphs;
+  } catch (error) {
+    console.error("Failed to delete graph:", error);
+    return [];
+  }
+};
+
+export { saveGraph, getGraphs, deleteGraph }; // ✅ Named exports
