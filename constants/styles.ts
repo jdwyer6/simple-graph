@@ -5,7 +5,7 @@ const brandStyles = StyleSheet.create({
     buttonPrimary: {
         backgroundColor: Colors.primary,
         padding: 10,
-        borderRadius: 5,
+        borderRadius: 100,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 10,
@@ -14,7 +14,7 @@ const brandStyles = StyleSheet.create({
     buttonSecondary: {
         backgroundColor: Colors.secondary,
         padding: 10,
-        borderRadius: 5,
+        borderRadius: 100,
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 10,

@@ -7,15 +7,7 @@ import Entypo from '@expo/vector-icons/Entypo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
-
-type Graph = {
-  id: string;
-  title: string;
-  emoji: string;
-  xAxis: string;
-  yAxis: string;
-  colorIdx: number;
-};
+import { Graph } from "../../types/Graph"
 
 export default function ExploreScreen() {
   const router = useRouter();

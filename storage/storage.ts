@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Graph } from "../types/Graph"
 
 const saveGraph = async (graph: any) => {
   try {
@@ -22,16 +23,6 @@ const getGraphs = async () => {
 };
 
 const deleteGraph = async (idToDelete: string) => {
-
-  type Graph = {
-    id: string;
-    title: string;
-    emoji: string;
-    xAxis: string;
-    yAxis: string;
-    colorIdx: number;
-  };
-  
 
   try {
     const data = await AsyncStorage.getItem("graphs");
