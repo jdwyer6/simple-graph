@@ -7,6 +7,7 @@ import EmojiPicker, { type EmojiType } from 'rn-emoji-keyboard'
 import * as Crypto from "expo-crypto";
 import { Colors } from "../../constants/Colors";
 import ColorSelector from "../../components/ColorSelector";
+import IconSelector from "../../components/IconSelector";
 
 export default function CreateGraphScreen() {
   const router = useRouter();
@@ -63,31 +64,31 @@ export default function CreateGraphScreen() {
     <View style={styles.container}>
         <Text style={styles.header}>Create a New Graph</Text>
 
-        <Text style={styles.label}>Graph Title</Text>
+        <Text style={brandStyles.formLabel}>Graph Title</Text>
         <TextInput
-            style={styles.input}
+            style={brandStyles.textInput}
             placeholder="Graph Title"
             value={title}
             onChangeText={setTitle}
         />
 
-        <Text style={styles.label}>X (Horizontal) Axis Label</Text>
+        <Text style={brandStyles.formLabel}>X (Horizontal) Axis Label</Text>
         <TextInput
-            style={styles.input}
+            style={brandStyles.textInput}
             placeholder="X-Axis Label"
             value={xAxis}
             onChangeText={setXAxis}
         />
 
-        <Text style={styles.label}>Y (Vertical) Axis Label</Text>
+        <Text style={brandStyles.formLabel}>Y (Vertical) Axis Label</Text>
         <TextInput
-            style={styles.input}
+            style={brandStyles.textInput}
             placeholder="Y-Axis Label"
             value={yAxis}
             onChangeText={setYAxis}
         />
 
-        <Text style={styles.label}>Emoji</Text>
+        <Text style={brandStyles.formLabel}>Emoji</Text>
         <TouchableOpacity onPress={() => setEmojiBoxOpen(true)} style={brandStyles.buttonTertiary}>
           <View style={brandStyles.flexRowCenter}>
             <Text>{emoji}</Text> 
@@ -95,7 +96,7 @@ export default function CreateGraphScreen() {
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.label}>Color</Text>
+        <Text style={brandStyles.formLabel}>Color</Text>
         <TouchableOpacity onPress={() => setColorModalOpen(true)} style={brandStyles.buttonTertiary}>
           <View style={brandStyles.flexRowCenter}>
             <View style={[styles.colorSelection, {backgroundColor: colorOptions[colorIdx].hex}]}></View>
@@ -130,16 +131,6 @@ const styles = StyleSheet.create({
     textAlign: "left",
     marginBottom: 20,
     color: Colors.text,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: Colors.border.light,
-    padding: 10,
-    marginBottom: 10,
-    borderRadius: 100,
-    color: Colors.text,
-    backgroundColor: Colors.background.input,
-    fontSize: 12,
   },
   label: {
     marginBottom: 5,

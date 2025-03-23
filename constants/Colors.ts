@@ -5,6 +5,13 @@
 
 const tintColorLight = '#0a7ea4';
 const tintColorDark = '#fff';
+const gray = {
+  darkest: '#11181C',
+  dark: '#858585',
+  neutral: '#AAB8C2',
+  light: '#E5E5E5',
+  lightest: '#f3f3f3',
+};
 
 export const Colors = {
   light: {
@@ -26,15 +33,22 @@ export const Colors = {
   primary: '#056270',
   secondary: '#F3675C',
   tertiary: '#CCCCCC',
-  white: '#F8F8F8',
+  white: '#FFF',
   text: '#11181C',
+  gray: {
+    darkest: gray.darkest,
+    dark: gray.dark,
+    neutral: '#AAB8C2',
+    light: '#E1E8ED',
+    lightest: '#F5F8FA',
+  },
   border: {
-    light: '#E5E5E5',
-    dark: '#858585',
+    light: gray.light,
+    dark: gray.dark,
   },
   background: {
-    primary: '#F8F8F8',
-    input: "#f3f3f3",
+    primary: '#FFF',
+    input: gray.lightest,
   },
   cardColors: {
     coral: "#FF6B6B",

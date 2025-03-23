@@ -51,7 +51,22 @@ const brandStyles = StyleSheet.create({
         justifyContent: 'center', 
         alignItems: 'center', 
         gap: 10
-    }
+    },
+    textInput: {
+        borderWidth: 1,
+        borderColor: Colors.border.light,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        marginBottom: 10,
+        borderRadius: 100,
+        color: Colors.text,
+        backgroundColor: Colors.background.input,
+        fontSize: 12,
+    },
+    formLabel: {
+        marginBottom: 5,
+        fontWeight: "bold",
+      },
   });
   
   export default brandStyles;

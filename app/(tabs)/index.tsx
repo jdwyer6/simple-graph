@@ -14,16 +14,6 @@ export default function ExploreScreen() {
   const [graphs, setGraphs] = useState<Graph[]>([]);
   const [colorOptions] = useState(Object.entries(Colors.cardColors).map(([name, hex]) => ({ name, hex })));
 
-  // useEffect(() => {
-  //   const fetchGraphs = async () => {
-  //     const savedGraphs = await getGraphs();
-  //     setGraphs(savedGraphs);
-  //   };
-
-  //   fetchGraphs();
-  //   console.log(graphs);
-  // }, []);
-
   useFocusEffect(
     useCallback(() => {
       const fetchGraphs = async () => {
@@ -34,26 +24,6 @@ export default function ExploreScreen() {
       fetchGraphs();
     }, [])
   );
-  
-
-  const handleDeleteGraph = (id: string) => {
-    Alert.alert(
-      "Delete Graph?",
-      "Are you sure you want to delete this graph?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            const updated = await deleteGraph(id);
-            setGraphs(updated);
-          },
-        },
-      ]
-    );
-  };
-  
 
   return (
     <SafeAreaView style={{ flex: 1 }}>
@@ -68,9 +38,6 @@ export default function ExploreScreen() {
             contentContainerStyle={{ padding: 10 }}
             renderItem={({ item }) => (
               <TouchableOpacity style={[styles.card, {backgroundColor: colorOptions[item.colorIdx].hex}]} onPress={() => router.push(`../graph/${item.id}`)}>
-                  <TouchableOpacity onPress={() => handleDeleteGraph(item.id)} style={styles.dots} >
-                    <Entypo name="dots-three-vertical" size={24} color="black" />
-                  </TouchableOpacity>
                 <Text style={styles.emoji}>{item.emoji}</Text>
                 <Text style={styles.cardText}>{item.title}</Text>
               </TouchableOpacity>
@@ -110,7 +77,7 @@ const styles = StyleSheet.create({
     fontSize: 80,
   },
   cardText: {
-    color: Colors.text,
+    color: Colors.white,
     fontSize: 18,
     fontWeight: "bold",
   },

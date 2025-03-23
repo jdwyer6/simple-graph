@@ -36,6 +36,7 @@ export default function ColorSelector({
             data={colorOptions}
             keyExtractor={(item) => item.name}
             numColumns={4}
+            contentContainerStyle={styles.swatchContainer}
             renderItem={({ item, index }) => (
               <TouchableOpacity
                 style={[
@@ -81,6 +82,12 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 15,
     textAlign: "center",
+  },
+  swatchContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around'
   },
   swatch: {
     width: 60,
