@@ -30,6 +30,12 @@ export default function ExploreScreen() {
       <View style={styles.container}>
         <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>Simple Graph</Text>
         <View style={styles.grid}>
+        {graphs.length === 0 && (
+          <TouchableOpacity style={[styles.card, {backgroundColor: colorOptions[0].hex}]} onPress={() => router.push('../create')}>
+            <Text style={styles.emoji}>➕</Text>
+            <Text style={styles.cardText}>Create New Graph</Text>
+          </TouchableOpacity>
+        )}
           <FlatList
             data={graphs}
             keyExtractor={(item) => item.id}

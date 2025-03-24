@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, Button, StyleSheet, Alert, TouchableOpacity } from "react-native";
+import { View, Text, TextInput, StyleSheet, Alert, TouchableOpacity, SafeAreaView, useColorScheme } from "react-native";
 import brandStyles from "../../constants/styles";
 import { saveGraph } from "../../storage/storage";
 import { useRouter } from "expo-router";
@@ -8,24 +8,38 @@ import * as Crypto from "expo-crypto";
 import { Colors } from "../../constants/Colors";
 import ColorSelector from "../../components/ColorSelector";
 import IconSelector from "../../components/IconSelector";
+import { useNavigation } from "expo-router";
+import { useLayoutEffect } from "react";
+import { Ionicons } from '@expo/vector-icons';
 
 export default function CreateGraphScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
+  const colorScheme = useColorScheme();
   const newId = Crypto.randomUUID();
   const [emojiBoxOpen, setEmojiBoxOpen] = useState(false);
   const [colorOptions] = useState(Object.entries(Colors.cardColors).map(([name, hex]) => ({ name, hex })));
   const [colorModalOpen, setColorModalOpen] = useState(false);
   const [title, setTitle] = useState("");
-  const [xAxis, setXAxis] = useState("");
-  const [yAxis, setYAxis] = useState("");
   const [emoji, setEmoji] = useState("📊");
   const [colorIdx, setColorIdx] = useState(0);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      headerLeft: () => (
+        <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginLeft: 16 }}>
+          <Ionicons name="arrow-back" size={24} color={colorScheme === "light" ? Colors.text : Colors.white } />
+        </TouchableOpacity>
+      ),
+      title: 'New Graph',
+    });
+  }, [navigation]);
 
   useEffect(() => {
     const randomColorIdx = Math.floor(Math.random() * colorOptions.length);
     setColorIdx(randomColorIdx);
   }, []);
-      
   
   const handleSelectEmoji = (emoji: EmojiType) => {
     console.log("Selected emoji:", emoji);
@@ -34,19 +48,18 @@ export default function CreateGraphScreen() {
 
   // Function to save graph data
   const handleSaveGraph = async () => {
-    if (!title || !xAxis || !yAxis) {
-      Alert.alert("Error", "All fields must be filled out!");
+    if (!title) {
+      Alert.alert("Error", "Please enter a title for your graph.");
       return;
     }
 
     const newGraph = {
       id: newId,
       title,
-      xAxis,
-      yAxis,
       emoji,
       colorIdx,
       createdAt: new Date().toISOString(),
+      settings: {}
     };
 
     try {
@@ -61,60 +74,48 @@ export default function CreateGraphScreen() {
   };
 
   return (
+    <SafeAreaView style={{ flex: 1 }}>
     <View style={styles.container}>
-        <Text style={styles.header}>Create a New Graph</Text>
+        <View>
+          <Text style={brandStyles.formLabel}>Graph Title</Text>
+          <TextInput
+              style={brandStyles.textInput}
+              placeholder="Graph Title"
+              value={title}
+              onChangeText={setTitle}
+          />
+        </View>
+        
+        <View>
+          <Text style={brandStyles.formLabel}>Emoji</Text>
+          <TouchableOpacity onPress={() => setEmojiBoxOpen(true)} style={brandStyles.buttonTertiary}>
+            <View style={brandStyles.flexRowCenter}>
+              <Text>{emoji}</Text> 
+              <Text>Select an Emoji</Text> 
+            </View>
+          </TouchableOpacity>
+        </View>
 
-        <Text style={brandStyles.formLabel}>Graph Title</Text>
-        <TextInput
-            style={brandStyles.textInput}
-            placeholder="Graph Title"
-            value={title}
-            onChangeText={setTitle}
-        />
-
-        <Text style={brandStyles.formLabel}>X (Horizontal) Axis Label</Text>
-        <TextInput
-            style={brandStyles.textInput}
-            placeholder="X-Axis Label"
-            value={xAxis}
-            onChangeText={setXAxis}
-        />
-
-        <Text style={brandStyles.formLabel}>Y (Vertical) Axis Label</Text>
-        <TextInput
-            style={brandStyles.textInput}
-            placeholder="Y-Axis Label"
-            value={yAxis}
-            onChangeText={setYAxis}
-        />
-
-        <Text style={brandStyles.formLabel}>Emoji</Text>
-        <TouchableOpacity onPress={() => setEmojiBoxOpen(true)} style={brandStyles.buttonTertiary}>
-          <View style={brandStyles.flexRowCenter}>
-            <Text>{emoji}</Text> 
-            <Text>Select an Emoji</Text> 
+        <View>
+          <Text style={brandStyles.formLabel}>Color</Text>
+            <TouchableOpacity onPress={() => setColorModalOpen(true)} style={brandStyles.buttonTertiary}>
+              <View style={brandStyles.flexRowCenter}>
+                <View style={[styles.colorSelection, {backgroundColor: colorOptions[colorIdx].hex}]}></View>
+                <Text>Select an Color</Text> 
+              </View>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
 
-        <Text style={brandStyles.formLabel}>Color</Text>
-        <TouchableOpacity onPress={() => setColorModalOpen(true)} style={brandStyles.buttonTertiary}>
-          <View style={brandStyles.flexRowCenter}>
-            <View style={[styles.colorSelection, {backgroundColor: colorOptions[colorIdx].hex}]}></View>
-            <Text>Select an Color</Text> 
+          <View>
+            <TouchableOpacity style={brandStyles.buttonPrimary} onPress={handleSaveGraph}>
+                <Text style={brandStyles.primaryButtonText}>Create Graph</Text>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
 
-        <EmojiPicker onEmojiSelected={handleSelectEmoji} enableSearchBar open={emojiBoxOpen} onClose={() => setEmojiBoxOpen(false)} />
-        <ColorSelector visible={colorModalOpen} onClose={() => setColorModalOpen(false)} colorOptions={colorOptions} currentIdx={colorIdx} onSelect={(idx) => setColorIdx(idx)} />
-
-        <TouchableOpacity style={brandStyles.buttonPrimary} onPress={handleSaveGraph}>
-            <Text style={brandStyles.primaryButtonText}>Create Graph</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={brandStyles.buttonSecondary} onPress={() => router.back()}>
-            <Text style={brandStyles.secondaryButtonText}>Cancel</Text>
-        </TouchableOpacity>
+          <EmojiPicker onEmojiSelected={handleSelectEmoji} enableSearchBar open={emojiBoxOpen} onClose={() => setEmojiBoxOpen(false)} />
+          <ColorSelector visible={colorModalOpen} onClose={() => setColorModalOpen(false)} colorOptions={colorOptions} currentIdx={colorIdx} onSelect={(idx) => setColorIdx(idx)} />
     </View>
+    </SafeAreaView>
   );
 }
 
@@ -122,8 +123,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    gap: 10,
     backgroundColor: Colors.background.primary,
-    justifyContent: "center",
+    justifyContent: "flex-start"
   },
   header: {
     fontSize: 24,

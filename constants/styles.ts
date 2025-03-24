@@ -4,7 +4,7 @@ import { Colors } from "./Colors";
 const brandStyles = StyleSheet.create({
     buttonPrimary: {
         backgroundColor: Colors.primary,
-        padding: 10,
+        padding: 15,
         borderRadius: 100,
         alignItems: "center",
         justifyContent: "center",
@@ -13,7 +13,7 @@ const brandStyles = StyleSheet.create({
 
     buttonSecondary: {
         backgroundColor: Colors.secondary,
-        padding: 10,
+        padding: 15,
         borderRadius: 100,
         alignItems: "center",
         justifyContent: "center",
@@ -22,7 +22,7 @@ const brandStyles = StyleSheet.create({
 
     buttonTertiary: {
         backgroundColor: Colors.white,
-        padding: 10,
+        padding: 15,
         fontWeight: "bold",
         borderColor: Colors.primary,
         borderWidth: 2,
@@ -55,7 +55,7 @@ const brandStyles = StyleSheet.create({
     textInput: {
         borderWidth: 1,
         borderColor: Colors.border.light,
-        paddingVertical: 10,
+        paddingVertical: 15,
         paddingHorizontal: 15,
         marginBottom: 10,
         borderRadius: 100,
