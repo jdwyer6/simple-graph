@@ -13,6 +13,7 @@ import brandStyles from "../../constants/styles";
 import Modal from "react-native-modal";
 import { deleteGraph } from "../../storage/storage";
 import ColorSelector from "@/components/ColorSelector";
+import EditDataModal from "@/components/EditDataModal";
 
 export default function GraphDetailScreen() {
     const router = useRouter();
@@ -24,17 +25,8 @@ export default function GraphDetailScreen() {
     const [newValue, setNewValue] = useState("");
     const [settingsDrawerVisible, setSettingsDrawerVisible] = useState(false);
     const [colorOptions] = useState(Object.entries(Colors.cardColors).map(([name, hex]) => ({ name, hex })));
-    const [settings, setSettings] = useState<GraphSettings>({
-        showPoints: graph?.settings?.showPoints ?? false,
-        smoothLine: graph?.settings?.smoothLine ?? true,
-        xAxisLabel: graph?.settings?.xAxisLabel ?? '',
-        yAxisLabel: graph?.settings?.yAxisLabel ?? '',
-        minimumYValue: graph?.settings?.minimumYValue ?? 0,
-        maximumYValue: graph?.settings?.maximumYValue ?? 100,
-        YInterval: graph?.settings?.YInterval ?? 1,
-        decimalPlaces: graph?.settings?.decimalPlaces ?? 0,
-        grid: graph?.settings?.grid ?? false,
-    });
+    const [settings, setSettings] = useState<GraphSettings>();
+    const [editDataModalVisible, setEditDataModalVisible] = useState(false);
 
     useEffect(() => {
         const fetch = async () => {
@@ -42,6 +34,17 @@ export default function GraphDetailScreen() {
         const found = allGraphs.find((g: Graph) => g.id === id);
         if (found) {
             setGraph(found);
+            setSettings({
+                showPoints: found.settings?.showPoints ?? true,
+                smoothLine: found.settings?.smoothLine ?? true,
+                grid: found.settings?.grid ?? true,
+                xAxisLabel: found.settings?.xAxisLabel ?? '',
+                yAxisLabel: found.settings?.yAxisLabel ?? '',
+                minimumYValue: found.settings?.minimumYValue ?? 0,
+                maximumYValue: found.settings?.maximumYValue ?? 100,
+                YInterval: found.settings?.YInterval ?? 1,
+                decimalPlaces: found.settings?.decimalPlaces ?? 0,
+            });
             navigation.setOptions({ 
                 title: `${found.emoji} ${found.title}`,
                 headerBackTitle: 'Home',
@@ -135,15 +138,15 @@ export default function GraphDetailScreen() {
                         datasets: [
                             {
                                 data: [...yVals],
-                                withDots: settings.showPoints,
+                                withDots: settings?.showPoints,
                             }
                         ],
                     }}
                     width={Dimensions.get("window").width - 0}
                     height={Dimensions.get("window").height - 400}
                     yAxisInterval={1}
-                    xAxisLabel={` ${settings.xAxisLabel}`}
-                    yAxisSuffix={` ${settings.yAxisLabel}`}
+                    xAxisLabel={` ${settings?.xAxisLabel}`}
+                    yAxisSuffix={` ${settings?.yAxisLabel}`}
                     chartConfig={{
                         backgroundColor: "#fff",
                         backgroundGradientFrom: Colors.white,
@@ -158,11 +161,11 @@ export default function GraphDetailScreen() {
                         },
                         propsForBackgroundLines: {
                             strokeDasharray: "",
-                            stroke: settings.grid ? Colors.gray.light : 'transparent'
+                            stroke: settings?.grid ? Colors.gray.light : 'transparent'
                         },
-                        decimalPlaces: settings.decimalPlaces,
+                        decimalPlaces: settings?.decimalPlaces,
                     }}
-                    bezier={settings.smoothLine}
+                    bezier={settings?.smoothLine}
                     style={{ marginVertical: 20, borderRadius: 10 }}
                     
                     />
@@ -203,16 +206,22 @@ export default function GraphDetailScreen() {
                                 <MaterialIcons name="drag-handle" size={24} color="black" />
                             </View>
                             <Text style={styles.title}>Settings</Text>
-                            {Object.entries(settings).map(([key, value]) => (
+                            <TouchableOpacity onPress={() => handleDeleteGraph(Array.isArray(id) ? id[0] : id)}>
+                                <Text style={[styles.drawerItem, { color: 'red' }]}>Delete Graph</Text>
+                            </TouchableOpacity>
+                            {settings && Object.entries(settings).map(([key, value]) => (
                                 <View key={key} style={styles.settingRow}>
                                 <Text style={styles.settingLabel}>{camelToTitle(key)}</Text>
 
                                 {typeof value === 'boolean' ? (
                                     <Switch
-                                        value={value}
-                                        onValueChange={(newValue) => {
-                                            setSettings((prev) => ({ ...prev, [key]: newValue }));
-                                            handleUpdateSettings();
+                                    value={value}
+                                    onValueChange={(newValue) => {
+                                        if (!settings) return;
+                                        setSettings({
+                                        ...settings,
+                                        [key]: newValue,
+                                        });
                                     }}
                                     />
                                 ) : (
@@ -221,25 +230,40 @@ export default function GraphDetailScreen() {
                                     keyboardType={typeof value === 'number' ? 'numeric' : 'default'}
                                     value={String(value)}
                                     onChangeText={(newText) => {
-                                        setSettings((prev) => ({
-                                        ...prev,
+                                        if (!settings) return;
+                                        setSettings({
+                                        ...settings,
                                         [key]: typeof value === 'number' ? Number(newText) : newText,
-                                        }))
-                                        handleUpdateSettings();
+                                        });
                                     }}
                                     />
                                 )}
                                 </View>
                             ))}
-                            <TouchableOpacity onPress={() => handleDeleteGraph(Array.isArray(id) ? id[0] : id)}>
-                                <Text style={[styles.drawerItem, { color: 'red' }]}>Delete Graph</Text>
+                            <TouchableOpacity style={brandStyles.buttonSecondary} onPress={()=>setEditDataModalVisible(true)}>
+                                <Text style={brandStyles.primaryButtonText}>Edit Data Entries</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={brandStyles.buttonPrimary} onPress={()=>setSettingsDrawerVisible(false)}>
+                            <TouchableOpacity 
+                                style={brandStyles.buttonPrimary}   
+                                onPress={async () => {
+                                    await handleUpdateSettings();
+                                    setSettingsDrawerVisible(false);
+                                }}
+                            >
                                 <Text style={brandStyles.primaryButtonText}>Save</Text>
                             </TouchableOpacity>
                         </View>
                     </KeyboardAwareScrollView>
                 </Modal>
+                
+                {graph && (
+                    <EditDataModal
+                        graph={graph}
+                        visible={editDataModalVisible}
+                        onClose={() => setEditDataModalVisible(false)}
+                    />
+                )}
+
             </KeyboardAwareScrollView>
         </SafeAreaView>
     );
