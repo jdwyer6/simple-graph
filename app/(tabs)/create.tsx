@@ -42,7 +42,6 @@ export default function CreateGraphScreen() {
   }, []);
   
   const handleSelectEmoji = (emoji: EmojiType) => {
-    console.log("Selected emoji:", emoji);
     setEmoji(emoji.emoji);
   }
 

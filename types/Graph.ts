@@ -17,6 +17,6 @@ export type GraphSettings = {
   maximumYValue: number;
   YInterval: number;
   decimalPlaces: number;
-  showDots: boolean;
+  grid: boolean
 };
   

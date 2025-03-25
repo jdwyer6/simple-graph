@@ -4,6 +4,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Alert,
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { getGraphs, saveAllGraphs } from "../../storage/storage";
 import { Graph, GraphSettings } from "../../types/Graph";
 import { LineChart } from "react-native-chart-kit";
@@ -11,6 +12,7 @@ import { Colors } from "../../constants/Colors";
 import brandStyles from "../../constants/styles";
 import Modal from "react-native-modal";
 import { deleteGraph } from "../../storage/storage";
+import ColorSelector from "@/components/ColorSelector";
 
 export default function GraphDetailScreen() {
     const router = useRouter();
@@ -20,7 +22,7 @@ export default function GraphDetailScreen() {
     const navigation = useNavigation();
     const [graph, setGraph] = useState<Graph | null>(null);
     const [newValue, setNewValue] = useState("");
-    const [drawerVisible, setDrawerVisible] = useState(false);
+    const [settingsDrawerVisible, setSettingsDrawerVisible] = useState(false);
     const [colorOptions] = useState(Object.entries(Colors.cardColors).map(([name, hex]) => ({ name, hex })));
     const [settings, setSettings] = useState<GraphSettings>({
         showPoints: graph?.settings?.showPoints ?? false,
@@ -31,7 +33,7 @@ export default function GraphDetailScreen() {
         maximumYValue: graph?.settings?.maximumYValue ?? 100,
         YInterval: graph?.settings?.YInterval ?? 1,
         decimalPlaces: graph?.settings?.decimalPlaces ?? 0,
-        showDots: graph?.settings?.showDots ?? false,
+        grid: graph?.settings?.grid ?? false,
     });
 
     useEffect(() => {
@@ -44,7 +46,7 @@ export default function GraphDetailScreen() {
                 title: `${found.emoji} ${found.title}`,
                 headerBackTitle: 'Home',
                 headerRight: () => (
-                    <TouchableOpacity onPress={() => setDrawerVisible(true)} style={{ marginRight: 16 }}>
+                    <TouchableOpacity onPress={() => setSettingsDrawerVisible(true)} style={{ marginRight: 16 }}>
                     <Feather name="settings" size={24} color={colorScheme === 'light' ? Colors.text : Colors.white} />
                     </TouchableOpacity>
                 ),
@@ -105,7 +107,6 @@ export default function GraphDetailScreen() {
         );
         await saveAllGraphs(updatedGraphs);
         setGraph(updatedGraph);
-        setDrawerVisible(false);
     }
 
     function camelToTitle(camelCaseStr:string) {
@@ -123,9 +124,9 @@ export default function GraphDetailScreen() {
         <SafeAreaView style={{ flex: 1 }}>
             <KeyboardAwareScrollView
                 style={styles.container}
-                contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
+                contentContainerStyle={{ flexGrow: 1 }}
                 keyboardShouldPersistTaps="handled"
-                extraScrollHeight={20} // Adjust as needed
+                extraScrollHeight={20}
             >
                 {Array.isArray(graph.data) && graph.data.length > 0 && (
                     <LineChart
@@ -133,16 +134,16 @@ export default function GraphDetailScreen() {
                         labels: xVals.map(String),
                         datasets: [
                             {
-                                data: [20, ...yVals, 50],
-                                withDots: false
+                                data: [...yVals],
+                                withDots: settings.showPoints,
                             }
                         ],
                     }}
                     width={Dimensions.get("window").width - 0}
                     height={Dimensions.get("window").height - 400}
                     yAxisInterval={1}
-                    yAxisLabel=""
-                    yAxisSuffix=""
+                    xAxisLabel={` ${settings.xAxisLabel}`}
+                    yAxisSuffix={` ${settings.yAxisLabel}`}
                     chartConfig={{
                         backgroundColor: "#fff",
                         backgroundGradientFrom: Colors.white,
@@ -152,16 +153,16 @@ export default function GraphDetailScreen() {
                         strokeWidth: 1,
                         propsForDots: {
                             r: "3",
-                            strokeWidth: "0",
+                            strokeWidth: "1",
                             stroke: Colors.gray.darkest,
                         },
                         propsForBackgroundLines: {
                             strokeDasharray: "",
-                            stroke: "transparent",
+                            stroke: settings.grid ? Colors.gray.light : 'transparent'
                         },
-                        decimalPlaces: graph.settings?.decimalPlaces ?? 0,
+                        decimalPlaces: settings.decimalPlaces,
                     }}
-                    bezier
+                    bezier={settings.smoothLine}
                     style={{ marginVertical: 20, borderRadius: 10 }}
                     
                     />
@@ -178,54 +179,63 @@ export default function GraphDetailScreen() {
                         keyboardType="numeric"
                     />
                     <TouchableOpacity style={brandStyles.buttonPrimary} onPress={handleAddPoint}>
-                        <Text style={brandStyles.primaryButtonText}>Submit</Text>
+                        <Text style={brandStyles.primaryButtonText}>Add Data Point</Text>
                     </TouchableOpacity>
                 </View>
 
                 <Modal
-                    isVisible={drawerVisible}
-                    onBackdropPress={() => setDrawerVisible(false)}
-                    onBackButtonPress={() => setDrawerVisible(false)}
-                    style={styles.modal}
+                    isVisible={settingsDrawerVisible}
+                    onBackdropPress={() => setSettingsDrawerVisible(false)}
+                    onBackButtonPress={() => setSettingsDrawerVisible(false)}
+                    style={[styles.modal, {marginTop: 50}]}
                     swipeDirection="down"
-                    onSwipeComplete={() => setDrawerVisible(false)}
+                    onSwipeComplete={() => setSettingsDrawerVisible(false)}
                     backdropOpacity={0.3}
                 >
                     <KeyboardAwareScrollView
-                        style={styles.container}
+                        style={styles.settingsContainer}
                         contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
                         keyboardShouldPersistTaps="handled"
                         extraScrollHeight={20}
                     >
                         <View style={styles.drawer}>
+                            <View style={{ alignItems: 'center' }}>
+                                <MaterialIcons name="drag-handle" size={24} color="black" />
+                            </View>
+                            <Text style={styles.title}>Settings</Text>
                             {Object.entries(settings).map(([key, value]) => (
                                 <View key={key} style={styles.settingRow}>
                                 <Text style={styles.settingLabel}>{camelToTitle(key)}</Text>
 
                                 {typeof value === 'boolean' ? (
                                     <Switch
-                                    value={value}
-                                    onValueChange={(newValue) =>
-                                        setSettings((prev) => ({ ...prev, [key]: newValue }))
-                                    }
+                                        value={value}
+                                        onValueChange={(newValue) => {
+                                            setSettings((prev) => ({ ...prev, [key]: newValue }));
+                                            handleUpdateSettings();
+                                    }}
                                     />
                                 ) : (
                                     <TextInput
                                     style={styles.settingInput}
                                     keyboardType={typeof value === 'number' ? 'numeric' : 'default'}
                                     value={String(value)}
-                                    onChangeText={(newText) =>
+                                    onChangeText={(newText) => {
                                         setSettings((prev) => ({
                                         ...prev,
                                         [key]: typeof value === 'number' ? Number(newText) : newText,
                                         }))
-                                    }
+                                        handleUpdateSettings();
+                                    }}
                                     />
                                 )}
                                 </View>
                             ))}
                             <TouchableOpacity onPress={() => handleDeleteGraph(Array.isArray(id) ? id[0] : id)}>
-                                <Text style={[styles.drawerItem, { color: 'red' }]}>Delete</Text>
+                                <Text style={[styles.drawerItem, { color: 'red' }]}>Delete Graph</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={brandStyles.buttonPrimary} onPress={()=>setSettingsDrawerVisible(false)}>
+                                <Text style={brandStyles.primaryButtonText}>Save</Text>
                             </TouchableOpacity>
                         </View>
                     </KeyboardAwareScrollView>
@@ -240,6 +250,9 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     backgroundColor: Colors.white,
+  },
+  settingsContainer: {
+    backgroundColor: Colors.background.primary,
   },
   title: {
     fontSize: 24,

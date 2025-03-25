@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, FlatList } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, useColorScheme, FlatList } from "react-native";
 import { useRouter } from "expo-router";
 import { Colors } from "../../constants/Colors";
 import { getGraphs, deleteGraph } from "../../storage/storage"; 
@@ -11,6 +11,7 @@ import { Graph } from "../../types/Graph"
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const colorScheme = useColorScheme();
   const [graphs, setGraphs] = useState<Graph[]>([]);
   const [colorOptions] = useState(Object.entries(Colors.cardColors).map(([name, hex]) => ({ name, hex })));
 
@@ -28,7 +29,7 @@ export default function ExploreScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <View style={styles.container}>
-        <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20 }}>Simple Graph</Text>
+        <Text style={{ fontSize: 24, fontWeight: "bold", marginBottom: 20, color: colorScheme === 'light' ? Colors.text : Colors.white }}>Simple Graph</Text>
         <View style={styles.grid}>
         {graphs.length === 0 && (
           <TouchableOpacity style={[styles.card, {backgroundColor: colorOptions[0].hex}]} onPress={() => router.push('../create')}>
