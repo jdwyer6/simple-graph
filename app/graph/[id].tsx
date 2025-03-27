@@ -77,6 +77,29 @@ export default function GraphDetailScreen() {
         );
     };
 
+    const handleDeleteDataPoint = async (index: number) => {
+        if (!graph || typeof index !== 'number') return;
+      
+        const updatedData = [...(graph.data ?? [])];
+        updatedData.splice(index, 1);
+      
+        const updatedGraph = { ...graph, data: updatedData };
+      
+        const allGraphs = await getGraphs();
+        const updatedGraphs = allGraphs.map((g:Graph) =>
+          g.id === graph.id ? updatedGraph : g
+        );
+      
+        await saveAllGraphs(updatedGraphs);
+        setGraph(updatedGraph);
+      };
+      
+
+    const handleClickEditGraph = () => {
+        router.push(`/graph/edit-${id}`)
+        setSettingsDrawerVisible(false);
+    }
+
     const handleAddPoint = async () => {
         const y = parseFloat(newValue);
         if (isNaN(y)) {
@@ -133,6 +156,35 @@ export default function GraphDetailScreen() {
             >
                 {Array.isArray(graph.data) && graph.data.length > 0 && (
                     <LineChart
+                    onDataPointClick={(data) => {
+                        Alert.alert(
+                            "Data Point Options",
+                            `Value: ${data.value}`,
+                            [
+                                {
+                                    text: "Delete This Point",
+                                    onPress: () => {
+                                        if (typeof data.index === 'number') {
+                                            handleDeleteDataPoint(data.index);
+                                            }
+                                    },
+                                    style: "destructive",
+                                },
+                                {
+                                    text: "Edit Data",
+                                    onPress: () => {
+                                        handleClickEditGraph();
+                                        console.log("Edit Pressed");
+                                    },
+                                },
+                                {
+                                    text: "Ok",
+                                    style: "cancel",
+                                },
+                            ]
+                          );
+                          
+                      }}
                     data={{
                         labels: xVals.map(String),
                         datasets: [
@@ -240,8 +292,8 @@ export default function GraphDetailScreen() {
                                 )}
                                 </View>
                             ))}
-                            <TouchableOpacity style={brandStyles.buttonSecondary} onPress={()=>setEditDataModalVisible(true)}>
-                                <Text style={brandStyles.primaryButtonText}>Edit Data Entries</Text>
+                            <TouchableOpacity style={brandStyles.buttonSecondary} onPress={handleClickEditGraph}>
+                                <Text style={brandStyles.primaryButtonText}>Edit Graph Data</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 
                                 style={brandStyles.buttonPrimary}   
@@ -255,16 +307,14 @@ export default function GraphDetailScreen() {
                         </View>
                     </KeyboardAwareScrollView>
                 </Modal>
-                
-                {graph && (
+            </KeyboardAwareScrollView>
+            {graph && (
                     <EditDataModal
                         graph={graph}
                         visible={editDataModalVisible}
                         onClose={() => setEditDataModalVisible(false)}
                     />
                 )}
-
-            </KeyboardAwareScrollView>
         </SafeAreaView>
     );
 }

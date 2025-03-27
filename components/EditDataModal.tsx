@@ -14,7 +14,7 @@ const EditDataModal = ({ graph, visible, onClose }: Props) => {
       visible={visible}
       onRequestClose={onClose}
       animationType="slide"
-      transparent={false} // Make sure it's not transparent
+      transparent={false}
     >
       <View style={styles.container}>
         <Text style={styles.title}>Edit Graph</Text>
@@ -30,9 +30,9 @@ const EditDataModal = ({ graph, visible, onClose }: Props) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // fill the screen
+    flex: 1,
     padding: 20,
-    backgroundColor: 'white', // must be visible!
+    backgroundColor: 'white',
   },
   title: {
     fontSize: 20,
