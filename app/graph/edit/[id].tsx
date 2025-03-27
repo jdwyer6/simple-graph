@@ -1,6 +1,6 @@
-import { useLocalSearchParams, useNavigation } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { View, Text, TextInput, FlatList, StyleSheet } from "react-native";
+import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity } from "react-native";
 import { Graph } from "@/types/Graph";
 import { getGraphs, saveAllGraphs } from "@/storage/storage";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -8,16 +8,20 @@ import { Colors } from "@/constants/Colors";
 
 export default function EditDataScreen() {
   const { id } = useLocalSearchParams();
+  const router = useRouter()
   const [graph, setGraph] = useState<Graph | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
+      const graphId = Array.isArray(id) ? id[0] : id; // Normalize ID
       const allGraphs = await getGraphs();
-      const found = allGraphs.find((g:Graph) => g.id === id);
+      const found = allGraphs.find((g: Graph) => g.id === graphId);
       if (found) setGraph(found);
+      else console.warn("Graph not found for ID:", graphId); // Helpful for debugging
     };
     fetch();
   }, [id]);
+  
 
   const updatePoint = (index: number, newY: number) => {
     if (!graph) return;
@@ -52,6 +56,9 @@ export default function EditDataScreen() {
           </View>
         )}
       />
+      <TouchableOpacity>
+        <Text onPress={()=>router.back()}>Save</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }

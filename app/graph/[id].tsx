@@ -96,7 +96,7 @@ export default function GraphDetailScreen() {
       
 
     const handleClickEditGraph = () => {
-        router.push(`/graph/edit-${id}`)
+        router.push(`/graph/edit/${id}`)
         setSettingsDrawerVisible(false);
     }
 
