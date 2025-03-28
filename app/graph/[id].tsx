@@ -187,7 +187,9 @@ export default function GraphDetailScreen() {
 
     if (!graph) return <Text>Loading...</Text>;
     const xVals = graph.data?.map((point) => point[0]) ?? [];
-    const yVals = graph.data?.map((point) => point[1]) ?? [];
+    let yVals = graph.data?.map((point) => point[1]) ?? [];
+    const minY = settings?.minimumYValue ?? Math.min(...yVals);
+    const maxY = settings?.maximumYValue ?? Math.max(...yVals);
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
@@ -222,14 +224,22 @@ export default function GraphDetailScreen() {
                         labels: xVals.map(String),
                         datasets: [
                             {
-                                data: [...yVals],
+                                data: [
+                                    ...yVals
+                                  ],
                                 withDots: settings?.showPoints,
-                            }
+                            },
+                            {
+                                data: [minY, maxY],
+                                withDots: false,
+                                strokeWidth: 0,
+                                color: () => 'transparent',
+                            },
                         ],
                     }}
                     width={Dimensions.get("window").width - 0}
                     height={Dimensions.get("window").height - 400}
-                    yAxisInterval={1}
+                    yAxisInterval={settings?.YInterval}
                     xAxisLabel={` ${settings?.xAxisLabel}`}
                     yAxisSuffix={` ${settings?.yAxisLabel}`}
                     chartConfig={{
@@ -249,10 +259,11 @@ export default function GraphDetailScreen() {
                             stroke: settings?.grid ? Colors.gray.light : 'transparent'
                         },
                         decimalPlaces: settings?.decimalPlaces,
+                        fillShadowGradient: 'transparent',
+                        fillShadowGradientOpacity: 0,
                     }}
                     bezier={settings?.smoothLine}
                     style={{ marginVertical: 20, borderRadius: 10 }}
-                    
                     />
                 )}
 
