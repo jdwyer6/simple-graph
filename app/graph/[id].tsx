@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Alert, useColorScheme, Switch, SafeAreaView } from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
@@ -27,14 +28,18 @@ export default function GraphDetailScreen() {
     const [colorOptions] = useState(Object.entries(Colors.cardColors).map(([name, hex]) => ({ name, hex })));
     const [settings, setSettings] = useState<GraphSettings>();
     const [editDataModalVisible, setEditDataModalVisible] = useState(false);
+    const [editPointIndex, setEditPointIndex] = useState<number | null>(null);
+    const [editPointVisible, setEditPointVisible] = useState(false);
 
-    useEffect(() => {
-        const fetch = async () => {
-        const allGraphs = await getGraphs();
-        const found = allGraphs.find((g: Graph) => g.id === id);
-        if (found) {
-            setGraph(found);
-            setSettings({
+    useFocusEffect(
+        useCallback(() => {
+          const fetchGraph = async () => {
+            const graphId = Array.isArray(id) ? id[0] : id;
+            const allGraphs = await getGraphs();
+            const found = allGraphs.find((g: Graph) => g.id === graphId);
+            if (found) {
+              setGraph(found);
+              setSettings({
                 showPoints: found.settings?.showPoints ?? true,
                 smoothLine: found.settings?.smoothLine ?? true,
                 grid: found.settings?.grid ?? true,
@@ -44,20 +49,23 @@ export default function GraphDetailScreen() {
                 maximumYValue: found.settings?.maximumYValue ?? 100,
                 YInterval: found.settings?.YInterval ?? 1,
                 decimalPlaces: found.settings?.decimalPlaces ?? 0,
-            });
-            navigation.setOptions({ 
+              });
+      
+              navigation.setOptions({ 
                 title: `${found.emoji} ${found.title}`,
                 headerBackTitle: 'Home',
                 headerRight: () => (
-                    <TouchableOpacity onPress={() => setSettingsDrawerVisible(true)} style={{ marginRight: 16 }}>
+                  <TouchableOpacity onPress={() => setSettingsDrawerVisible(true)} style={{ marginRight: 16 }}>
                     <Feather name="settings" size={24} color={colorScheme === 'light' ? Colors.text : Colors.white} />
-                    </TouchableOpacity>
+                  </TouchableOpacity>
                 ),
-            });
-        }
-        };
-        fetch();
-    }, [id]);
+              });
+            }
+          };
+      
+          fetchGraph();
+        }, [id])
+    );
 
     const handleDeleteGraph = (id: string) => {
         Alert.alert(
@@ -91,6 +99,7 @@ export default function GraphDetailScreen() {
         );
       
         await saveAllGraphs(updatedGraphs);
+        setEditPointVisible(false);
         setGraph(updatedGraph);
       };
       
@@ -98,6 +107,13 @@ export default function GraphDetailScreen() {
     const handleClickEditGraph = () => {
         router.push(`/graph/edit/${id}`)
         setSettingsDrawerVisible(false);
+    }
+
+    const handleClickEditPoint = (index: number) => {
+        if (!graph?.data) return;
+        setEditPointIndex(index);
+        setNewValue(graph.data[index][1].toString());
+        setEditPointVisible(true);
     }
 
     const handleAddPoint = async () => {
@@ -120,6 +136,33 @@ export default function GraphDetailScreen() {
         setGraph(updatedGraph);
         setNewValue("");
     };
+
+    const handleSaveEditedPoint = async () => {
+        if (!graph || editPointIndex === null) return;
+      
+        const y = parseFloat(newValue);
+        if (isNaN(y)) {
+          Alert.alert("Invalid input", "Please enter a numeric value.");
+          return;
+        }
+      
+        const updatedData = [...(graph.data ?? [])];
+        updatedData[editPointIndex] = [updatedData[editPointIndex][0], y];
+      
+        const updatedGraph = { ...graph, data: updatedData };
+      
+        const allGraphs = await getGraphs();
+        const updatedGraphs = allGraphs.map((g: Graph) =>
+          g.id === graph.id ? updatedGraph : g
+        );
+      
+        await saveAllGraphs(updatedGraphs);
+        setGraph(updatedGraph);
+        setEditPointVisible(false);
+        setEditPointIndex(null);
+        setNewValue(""); // Reset input
+    };
+      
 
     const handleUpdateSettings = async () => {
         const updatedGraph: Graph = {
@@ -162,23 +205,13 @@ export default function GraphDetailScreen() {
                             `Value: ${data.value}`,
                             [
                                 {
-                                    text: "Delete This Point",
+                                    text: "Edit",
                                     onPress: () => {
-                                        if (typeof data.index === 'number') {
-                                            handleDeleteDataPoint(data.index);
-                                            }
-                                    },
-                                    style: "destructive",
-                                },
-                                {
-                                    text: "Edit Data",
-                                    onPress: () => {
-                                        handleClickEditGraph();
-                                        console.log("Edit Pressed");
+                                        handleClickEditPoint(data.index);
                                     },
                                 },
                                 {
-                                    text: "Ok",
+                                    text: "Back",
                                     style: "cancel",
                                 },
                             ]
@@ -239,6 +272,49 @@ export default function GraphDetailScreen() {
                 </View>
 
                 <Modal
+                    isVisible={editPointVisible}
+                    onBackdropPress={() => setEditPointVisible(false)}
+                    onBackButtonPress={() => setEditPointVisible(false)}
+                    style={[styles.modal, {marginTop: 50}]}
+                    swipeDirection="down"
+                    onSwipeComplete={() => setEditPointVisible(false)}
+                    backdropOpacity={0.3}
+                >
+                    <KeyboardAwareScrollView
+                        style={styles.settingsContainer}
+                        contentContainerStyle={{ flexGrow: 1, justifyContent: "space-between" }}
+                        keyboardShouldPersistTaps="handled"
+                        extraScrollHeight={20}
+                    >
+                        <View style={styles.drawer}>
+                            <View style={{ alignItems: 'center' }}>
+                                <MaterialIcons name="drag-handle" size={24} color="black" />
+                            </View>
+                            <View>
+                                <Text style={styles.title}>Edit Data Point</Text>
+                                <TouchableOpacity onPress={() => handleDeleteDataPoint(editPointIndex as number)}>
+                                    <Text style={[styles.drawerItem, { color: 'red' }]}>Delete Point</Text>
+                                </TouchableOpacity>
+                            </View>
+                            
+                            <Text style={brandStyles.formLabel}>New Y Value</Text>
+                            <TextInput
+                                ref={inputRef} 
+                                style={brandStyles.textInput}
+                                placeholder="Enter Y value"
+                                value={newValue}
+                                onChangeText={setNewValue}
+                                keyboardType="numeric"
+                            />
+                            <TouchableOpacity style={brandStyles.buttonPrimary} onPress={handleSaveEditedPoint}>
+                                <Text style={brandStyles.primaryButtonText}>Save</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </KeyboardAwareScrollView>
+
+                </Modal>
+
+                <Modal
                     isVisible={settingsDrawerVisible}
                     onBackdropPress={() => setSettingsDrawerVisible(false)}
                     onBackButtonPress={() => setSettingsDrawerVisible(false)}
@@ -292,7 +368,7 @@ export default function GraphDetailScreen() {
                                 )}
                                 </View>
                             ))}
-                            <TouchableOpacity style={brandStyles.buttonSecondary} onPress={handleClickEditGraph}>
+                            <TouchableOpacity style={brandStyles.buttonSecondary} onPress={()=>handleClickEditGraph()}>
                                 <Text style={brandStyles.primaryButtonText}>Edit Graph Data</Text>
                             </TouchableOpacity>
                             <TouchableOpacity 

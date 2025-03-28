@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity } from "react-native";
 import { Graph } from "@/types/Graph";
+import brandStyles from "@/constants/styles";
 import { getGraphs, saveAllGraphs } from "@/storage/storage";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Colors } from "@/constants/Colors";
@@ -10,21 +11,31 @@ export default function EditDataScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter()
   const [graph, setGraph] = useState<Graph | null>(null);
+  const [editedData, setEditedData] = useState<[number, number][]>([]);
+
 
   useEffect(() => {
     const fetch = async () => {
-      const graphId = Array.isArray(id) ? id[0] : id; // Normalize ID
+      const graphId = Array.isArray(id) ? id[0] : id;
       const allGraphs = await getGraphs();
       const found = allGraphs.find((g: Graph) => g.id === graphId);
       if (found) setGraph(found);
-      else console.warn("Graph not found for ID:", graphId); // Helpful for debugging
+      else console.warn("Graph not found for ID:", graphId);
     };
     fetch();
   }, [id]);
   
+  useEffect(() => {
+    if (graph?.data) {
+      setEditedData([...graph.data]);
+    }
+  }, [graph]);
+  
 
   const updatePoint = (index: number, newY: number) => {
+    console.log('updatepoint')
     if (!graph) return;
+    
     const updated = [...graph.data ?? []];
     updated[index][1] = newY;
     const newGraph = { ...graph, data: updated };
@@ -40,9 +51,29 @@ export default function EditDataScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { flex: 1 }]}>
-      <Text style={styles.title}>{graph.title} - Edit Entries</Text>
+      <TouchableOpacity
+        style={brandStyles.buttonPrimary}
+        onPress={async () => {
+          if (!graph) return;
+
+          const updatedGraph = { ...graph, data: editedData };
+          setGraph(updatedGraph);
+
+          const graphId = Array.isArray(id) ? id[0] : id;
+          const all = await getGraphs();
+          const updatedGraphs = all.map((g: Graph) =>
+            g.id === graphId ? updatedGraph : g
+          );
+          await saveAllGraphs(updatedGraphs);
+          router.back();
+        }}
+      >
+        <Text style={brandStyles.primaryButtonText}>Save</Text>
+      </TouchableOpacity>
+
+      <Text style={styles.title}>Edit Entries</Text>
       <FlatList
-        data={graph.data}
+        data={editedData}
         keyExtractor={(_, i) => i.toString()}
         renderItem={({ item, index }) => (
           <View style={styles.row}>
@@ -50,15 +81,17 @@ export default function EditDataScreen() {
             <TextInput
               keyboardType="numeric"
               style={styles.input}
-              defaultValue={item[1].toString()}
-              onEndEditing={(e) => updatePoint(index, Number(e.nativeEvent.text))}
+              value={item[1].toString()}
+              onChangeText={(text) => {
+                const newData = [...editedData];
+                newData[index][1] = Number(text);
+                setEditedData(newData);
+              }}
             />
           </View>
         )}
       />
-      <TouchableOpacity>
-        <Text onPress={()=>router.back()}>Save</Text>
-      </TouchableOpacity>
+
     </SafeAreaView>
   );
 }
