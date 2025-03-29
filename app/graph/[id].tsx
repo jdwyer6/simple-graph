@@ -1,11 +1,12 @@
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { useEffect, useState, useRef, useCallback } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Alert, useColorScheme, Switch, SafeAreaView } from "react-native";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Alert, useColorScheme, Switch, SafeAreaView, KeyboardAvoidingView, Platform } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import Entypo from '@expo/vector-icons/Entypo';
 import Feather from '@expo/vector-icons/Feather';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import AntDesign from '@expo/vector-icons/AntDesign';
 import { getGraphs, saveAllGraphs } from "../../storage/storage";
 import { Graph, GraphSettings } from "../../types/Graph";
 import { LineChart } from "react-native-chart-kit";
@@ -15,6 +16,7 @@ import Modal from "react-native-modal";
 import { deleteGraph } from "../../storage/storage";
 import ColorSelector from "@/components/ColorSelector";
 import EditDataModal from "@/components/EditDataModal";
+import EmojiPicker, { type EmojiType } from 'rn-emoji-keyboard'
 
 export default function GraphDetailScreen() {
     const router = useRouter();
@@ -30,6 +32,9 @@ export default function GraphDetailScreen() {
     const [editDataModalVisible, setEditDataModalVisible] = useState(false);
     const [editPointIndex, setEditPointIndex] = useState<number | null>(null);
     const [editPointVisible, setEditPointVisible] = useState(false);
+    const [addPointVisible, setAddPointVisible] = useState(false);
+    const [colorModalOpen, setColorModalOpen] = useState(false);
+    const [colorIdx, setColorIdx] = useState(0);
 
     useFocusEffect(
         useCallback(() => {
@@ -39,6 +44,7 @@ export default function GraphDetailScreen() {
             const found = allGraphs.find((g: Graph) => g.id === graphId);
             if (found) {
               setGraph(found);
+              setColorIdx(found.colorIdx ?? 0);
               setSettings({
                 showPoints: found.settings?.showPoints ?? true,
                 smoothLine: found.settings?.smoothLine ?? true,
@@ -135,6 +141,7 @@ export default function GraphDetailScreen() {
         await saveAllGraphs(updatedGraphs);
         setGraph(updatedGraph);
         setNewValue("");
+        setAddPointVisible(false);
     };
 
     const handleSaveEditedPoint = async () => {
@@ -167,6 +174,7 @@ export default function GraphDetailScreen() {
     const handleUpdateSettings = async () => {
         const updatedGraph: Graph = {
         ...graph!,
+        colorIdx,
         settings,
         };
 
@@ -199,6 +207,40 @@ export default function GraphDetailScreen() {
                 keyboardShouldPersistTaps="handled"
                 extraScrollHeight={20}
             >
+            
+                <View style={styles.graphActionContainer}>
+                    <TouchableOpacity style={styles.graphActionButton} onPress={() => setAddPointVisible(true)}><AntDesign name="pluscircleo" size={24} color={Colors.white} /></TouchableOpacity>
+                </View>
+
+
+                <Modal
+                    isVisible={addPointVisible}
+                    onBackdropPress={() => setAddPointVisible(false)}
+                    onBackButtonPress={() => setAddPointVisible(false)}
+                    style={{ justifyContent: 'flex-end', margin: 0 }}
+                    swipeDirection="down"
+                    onSwipeComplete={() => setAddPointVisible(false)}
+                    backdropOpacity={0.3}
+                    avoidKeyboard
+                    onModalShow={()=>inputRef.current?.focus()}
+                >
+                    <View style={styles.drawer}>
+                        <Text style={brandStyles.formLabel}>New Data Point (Y)</Text>
+                        <TextInput
+                            ref={inputRef}
+                            style={brandStyles.textInput}
+                            placeholder="Enter Y value"
+                            value={newValue}
+                            onChangeText={setNewValue}
+                            keyboardType="numeric"
+                        />
+                        <TouchableOpacity style={brandStyles.buttonPrimary} onPress={handleAddPoint}>
+                            <Text style={brandStyles.primaryButtonText}>Add Data Point</Text>
+                        </TouchableOpacity>
+                    </View>
+                </Modal>
+
+
                 {Array.isArray(graph.data) && graph.data.length > 0 && (
                     <LineChart
                     onDataPointClick={(data) => {
@@ -230,14 +272,14 @@ export default function GraphDetailScreen() {
                                 withDots: settings?.showPoints,
                             },
                             {
-                                data: [minY, maxY],
+                                data: [minY, maxY], //Ghost Points for Min and Max Y
                                 withDots: false,
                                 strokeWidth: 0,
                                 color: () => 'transparent',
                             },
                         ],
                     }}
-                    width={Dimensions.get("window").width - 0}
+                    width={Dimensions.get("window").width - 40}
                     height={Dimensions.get("window").height - 400}
                     yAxisInterval={settings?.YInterval}
                     xAxisLabel={` ${settings?.xAxisLabel}`}
@@ -259,28 +301,16 @@ export default function GraphDetailScreen() {
                             stroke: settings?.grid ? Colors.gray.light : 'transparent'
                         },
                         decimalPlaces: settings?.decimalPlaces,
-                        fillShadowGradient: 'transparent',
+                        fillShadowGradientFrom: 'rgba(0,0,0,0)',
+                        fillShadowGradientTo: 'rgba(0,0,0,0)',
+                        fillShadowGradientFromOpacity: 0,
+                        fillShadowGradientToOpacity: 0,
                         fillShadowGradientOpacity: 0,
                     }}
                     bezier={settings?.smoothLine}
-                    style={{ marginVertical: 20, borderRadius: 10 }}
+                    style={{ marginVertical: 20, borderRadius: 10, marginLeft: settings?.yAxisLabel ? 0 : -20 }}
                     />
                 )}
-
-                <View>
-                    <Text style={brandStyles.formLabel}>New Data Point (Y)</Text>
-                    <TextInput
-                        ref={inputRef} 
-                        style={brandStyles.textInput}
-                        placeholder="Enter Y value"
-                        value={newValue}
-                        onChangeText={setNewValue}
-                        keyboardType="numeric"
-                    />
-                    <TouchableOpacity style={brandStyles.buttonPrimary} onPress={handleAddPoint}>
-                        <Text style={brandStyles.primaryButtonText}>Add Data Point</Text>
-                    </TouchableOpacity>
-                </View>
 
                 <Modal
                     isVisible={editPointVisible}
@@ -379,9 +409,16 @@ export default function GraphDetailScreen() {
                                 )}
                                 </View>
                             ))}
+
+                            <TouchableOpacity style={brandStyles.buttonTertiary} onPress={()=>setColorModalOpen(true)}>
+                                <Text style={brandStyles.secondaryButtonText}>Color</Text>
+                            </TouchableOpacity>
+
+                            <ColorSelector visible={colorModalOpen} onClose={() => setColorModalOpen(false)} colorOptions={colorOptions} currentIdx={colorIdx} onSelect={(idx) => setColorIdx(idx)} />
                             <TouchableOpacity style={brandStyles.buttonSecondary} onPress={()=>handleClickEditGraph()}>
                                 <Text style={brandStyles.primaryButtonText}>Edit Graph Data</Text>
                             </TouchableOpacity>
+                            
                             <TouchableOpacity 
                                 style={brandStyles.buttonPrimary}   
                                 onPress={async () => {
@@ -454,4 +491,18 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     backgroundColor: Colors.background.input,
   },
+  graphActionContainer: {
+    position: 'absolute',
+    width: '100%',
+    bottom: 0,
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+
+  },
+  graphActionButton: {
+    backgroundColor: Colors.primary,
+    borderRadius: 16,
+    padding: 24,
+  }
 });
