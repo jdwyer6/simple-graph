@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, useLayoutEffect } from "react";
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Dimensions, Alert, useColorScheme, Switch, SafeAreaView, KeyboardAvoidingView, Platform } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -35,6 +35,8 @@ export default function GraphDetailScreen() {
     const [addPointVisible, setAddPointVisible] = useState(false);
     const [colorModalOpen, setColorModalOpen] = useState(false);
     const [colorIdx, setColorIdx] = useState(0);
+    const [emojiModalOpen, setEmojiModalOpen] = useState(false);
+    const [emoji, setEmoji] = useState("");
 
     useFocusEffect(
         useCallback(() => {
@@ -43,29 +45,30 @@ export default function GraphDetailScreen() {
             const allGraphs = await getGraphs();
             const found = allGraphs.find((g: Graph) => g.id === graphId);
             if (found) {
-              setGraph(found);
-              setColorIdx(found.colorIdx ?? 0);
-              setSettings({
-                showPoints: found.settings?.showPoints ?? true,
-                smoothLine: found.settings?.smoothLine ?? true,
-                grid: found.settings?.grid ?? true,
-                xAxisLabel: found.settings?.xAxisLabel ?? '',
-                yAxisLabel: found.settings?.yAxisLabel ?? '',
-                minimumYValue: found.settings?.minimumYValue ?? 0,
-                maximumYValue: found.settings?.maximumYValue ?? 100,
-                YInterval: found.settings?.YInterval ?? 1,
-                decimalPlaces: found.settings?.decimalPlaces ?? 0,
-              });
-      
-              navigation.setOptions({ 
-                title: `${found.emoji} ${found.title}`,
-                headerBackTitle: 'Home',
-                headerRight: () => (
-                  <TouchableOpacity onPress={() => setSettingsDrawerVisible(true)} style={{ marginRight: 16 }}>
-                    <Feather name="settings" size={24} color={colorScheme === 'light' ? Colors.text : Colors.white} />
-                  </TouchableOpacity>
-                ),
-              });
+                setGraph(found);
+                setColorIdx(found.colorIdx ?? 0);
+                setEmoji(found.emoji ?? '📊');
+                setSettings({
+                    showPoints: found.settings?.showPoints ?? true,
+                    smoothLine: found.settings?.smoothLine ?? true,
+                    grid: found.settings?.grid ?? true,
+                    xAxisLabel: found.settings?.xAxisLabel ?? '',
+                    yAxisLabel: found.settings?.yAxisLabel ?? '',
+                    minimumYValue: found.settings?.minimumYValue ?? 0,
+                    maximumYValue: found.settings?.maximumYValue ?? 100,
+                    YInterval: found.settings?.YInterval ?? 1,
+                    decimalPlaces: found.settings?.decimalPlaces ?? 0,
+                });
+        
+                navigation.setOptions({ 
+                    title: `${found.emoji} ${found.title}`,
+                    headerBackTitle: 'Home',
+                    headerRight: () => (
+                    <TouchableOpacity onPress={() => setSettingsDrawerVisible(true)} style={{ marginRight: 16 }}>
+                        <Feather name="settings" size={24} color={colorScheme === 'light' ? Colors.text : Colors.white} />
+                    </TouchableOpacity>
+                    ),
+                });
             }
           };
       
@@ -107,8 +110,11 @@ export default function GraphDetailScreen() {
         await saveAllGraphs(updatedGraphs);
         setEditPointVisible(false);
         setGraph(updatedGraph);
-      };
+    };
       
+    const handleSelectEmoji = (emoji: EmojiType) => {
+        setEmoji(emoji.emoji);
+      }
 
     const handleClickEditGraph = () => {
         router.push(`/graph/edit/${id}`)
@@ -175,6 +181,7 @@ export default function GraphDetailScreen() {
         const updatedGraph: Graph = {
         ...graph!,
         colorIdx,
+        emoji,
         settings,
         };
 
@@ -410,15 +417,20 @@ export default function GraphDetailScreen() {
                                 </View>
                             ))}
 
+                            <ColorSelector visible={colorModalOpen} onClose={() => setColorModalOpen(false)} colorOptions={colorOptions} currentIdx={colorIdx} onSelect={(idx) => setColorIdx(idx)} />
                             <TouchableOpacity style={brandStyles.buttonTertiary} onPress={()=>setColorModalOpen(true)}>
                                 <Text style={brandStyles.secondaryButtonText}>Color</Text>
                             </TouchableOpacity>
 
-                            <ColorSelector visible={colorModalOpen} onClose={() => setColorModalOpen(false)} colorOptions={colorOptions} currentIdx={colorIdx} onSelect={(idx) => setColorIdx(idx)} />
+                            <EmojiPicker onEmojiSelected={handleSelectEmoji} enableSearchBar open={emojiModalOpen} onClose={() => setEmojiModalOpen(false)} />
+                            <TouchableOpacity style={brandStyles.buttonTertiary} onPress={()=>setEmojiModalOpen(true)}>
+                                <Text style={brandStyles.secondaryButtonText}>Emoji</Text>
+                            </TouchableOpacity>
+                            
                             <TouchableOpacity style={brandStyles.buttonSecondary} onPress={()=>handleClickEditGraph()}>
                                 <Text style={brandStyles.primaryButtonText}>Edit Graph Data</Text>
                             </TouchableOpacity>
-                            
+
                             <TouchableOpacity 
                                 style={brandStyles.buttonPrimary}   
                                 onPress={async () => {
