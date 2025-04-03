@@ -63,8 +63,6 @@ export default function CreateGraphScreen() {
 
     try {
       await saveGraph(newGraph);
-
-      Alert.alert("Success", "Graph saved!");
       router.back();
     } catch (error) {
       console.error("Error saving graph:", error);

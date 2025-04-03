@@ -61,7 +61,7 @@ export default function GraphDetailScreen() {
                 });
         
                 navigation.setOptions({ 
-                    title: `${found.emoji} ${found.title}`,
+                    title: "Edit Graph",
                     headerBackTitle: 'Home',
                     headerRight: () => (
                     <TouchableOpacity onPress={() => setSettingsDrawerVisible(true)} style={{ marginRight: 16 }}>
@@ -214,11 +214,14 @@ export default function GraphDetailScreen() {
                 keyboardShouldPersistTaps="handled"
                 extraScrollHeight={20}
             >
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 20, gap: 8}}>
+                    <Text style={{ fontSize: 24 }}>{emoji}</Text>
+                    <Text style={{ fontSize: 24, fontWeight: 'bold' }}>{graph.title}</Text>
+                </View>
             
                 <View style={styles.graphActionContainer}>
                     <TouchableOpacity style={styles.graphActionButton} onPress={() => setAddPointVisible(true)}><AntDesign name="pluscircleo" size={24} color={Colors.white} /></TouchableOpacity>
                 </View>
-
 
                 <Modal
                     isVisible={addPointVisible}
